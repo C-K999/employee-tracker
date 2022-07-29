@@ -79,7 +79,8 @@ function mainAccess() {
           }]).then((departmentResponse)=>{
             db.query('INSERT INTO department (department_name) VALUES (?);', [departmentResponse.dPrompt.toString()], (err, results) => {
               if (err) throw err;
-              console.log('Added'+departmentResponse.dPrompt.toString()+' to the database.');
+              console.log('Added '+departmentResponse.dPrompt.toString()+' to the database.');
+              mainAccess();
             });
           })
           break;
