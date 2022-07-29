@@ -65,7 +65,7 @@ function mainAccess() {
           mainAccess();
           break;
         case 'VIEW ALL EMPLOYEES':
-          db.query("SELECT employee.id, first_name, last_name, e_role.title, department.department_name AS 'department', salary, manager_id FROM employee JOIN e_role, department", (err, results) => {
+          db.query("SELECT employee.id, first_name, last_name, e_role.title, department.department_name AS 'department', salary, manager_id FROM employee LEFT JOIN e_role ON employee.role_id = e_role.id LEFT JOIN department ON e_role.department_id = department.id;", (err, results) => {
             console.log('\n');
             console.table(results);
           });
@@ -77,7 +77,8 @@ function mainAccess() {
             message:'What is the name of the department?',
             name:'dPrompt'
           }]).then((departmentResponse)=>{
-            db.query(`INSERT INTO department (department_name) VALUES ${departmentResponse.dPrompt}`, (err, results) => {
+            db.query('INSERT INTO department (department_name) VALUES (?);', [departmentResponse.dPrompt.toString()], (err, results) => {
+              if (err) throw err;
               console.log('Added'+departmentResponse.dPrompt.toString()+' to the database.');
             });
           })
@@ -101,7 +102,8 @@ function mainAccess() {
               choices: departList,
             }
           ]).then((roleResponse)=>{
-            db.query(``, (err, results) => {
+            db.query('INSERT INTO e_role (title, salary, department_id) VALUES (?,?,?);', [roleResponse.rPrompt.toString(),roleResponse.sPrompt.toString(),roleResponse.dList.toString()], (err, results) => {
+              if (err) throw err;
               console.log('Added'+roleResponse.rPrompt.toString()+' to the database.');
             });
           })
@@ -131,7 +133,8 @@ function mainAccess() {
               choices: manageList
             }
           ]).then((eResponse)=>{
-            db.query(``, (err, results) => {
+            db.query('INSERT INTO employee (first_name, last_name, role_id) VALUES (?,?,?);', [eResponse.fPrompt.toString(),eResponse.lPrompt.toString(),eResponse.roleList.toString()], (err, results) => {
+              if (err) throw err;
               console.log('Added'+eResponse.fPrompt.toString()+' '+eResponse.lPrompt.toString()+' to the database.');
             });
           })
@@ -150,7 +153,7 @@ function mainAccess() {
               name: 'newRList',
               choices: roleList
             }
-          ]).then((eResponse)=>{
+          ]).then((uResponse)=>{
             db.query(``, (err, results) => {
               console.log("Updated employee's role.");
             });
@@ -158,7 +161,7 @@ function mainAccess() {
           break;
       }
     }
-    console.log('Goodbye. Press ^C to exit.')
+    console.log('Press ^C to exit.')
   })
 }
 
