@@ -9,7 +9,3 @@ SELECT employee.id, first_name, last_name, e_role.title, department.department_n
 FROM employee
 LEFT JOIN e_role ON employee.role_id = e_role.id
 LEFT JOIN department ON e_role.department_id = department.id;
-
-UPDATE employee
-SET role_id = 2
-WHERE id = 1;

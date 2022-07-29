@@ -24,30 +24,11 @@ function mainAccess() {
 
   let lastCall;
 
-  let departList = [];
-  db.query('SELECT department_name AS "department" FROM department',(err,results)=>{
-    if (err) throw err;
-    departList = results.map(({ id, department_name }) => ( department_name ));
-  });
-
-  let roleList = [];
-  db.query('SELECT title FROM e_role',(err,results)=>{
-    if (err) throw err;
-    roleList = results.map(({ id, title, salary, department_id }) => ( title ));
-  });
-
-  let employeeList = [];
-  db.query('SELECT first_name, last_name FROM employee',(err,results)=>{
-    if (err) throw err;
-    employeeList = results.map(({ id, first_name, last_name, role_id, manager_id}) => ( first_name +' '+ last_name ));
-  });
-
-  let manageList = [];
-
-
   userPrompts().then((response)=>{
     lastCall = response.query.toString().toUpperCase();
+
     if(lastCall != 'QUIT'){
+      
       switch(lastCall){
         case 'VIEW ALL DEPARTMENTS':
           db.query("SELECT id, department_name AS 'name' FROM department", (err, results) => {
@@ -95,17 +76,30 @@ function mainAccess() {
               type:'input',
               message: 'What is the salary of the role?',
               name: 'sPrompt'
-            },
-            {
-              type:'list',
-              message: 'Which department does the role belong to?',
-              name: 'dList',
-              choices: departList,
             }
           ]).then((roleResponse)=>{
-            db.query('INSERT INTO e_role (title, salary, department_id) VALUES (?,?,?);', [roleResponse.rPrompt.toString(),roleResponse.sPrompt.toString(),roleResponse.dList.toString()], (err, results) => {
+            const departList = [roleResponse.rPrompt,roleResponse.sPrompt];
+
+            db.query(`SELECT department_name, id FROM department`, (err, results) => {
               if (err) throw err;
-              console.log('Added'+roleResponse.rPrompt.toString()+' to the database.');
+              const d = results.map(({ department_name, id }) => ({ name: department_name, value: id }));
+
+              inquirer.prompt([
+                {
+                  type: 'list',
+                  name: 'dept',
+                  message: 'Which department does the role belong to?',
+                  choices: d
+                }
+              ]).then(deptResponse => {
+                departList.push(deptResponse.dept);
+                db.query(`INSERT INTO e_role (title, salary, department_id) VALUES (?, ?, ?)`,departList, (err, result) => {
+                  if (err) throw err;
+                  console.log('Added' + roleResponse.rPrompt + " to the database.");
+                  mainAccess();
+                })
+              })
+              
             });
           })
           break;
