@@ -160,23 +160,47 @@ function mainAccess() {
         })
           break;
         case 'UPDATE AN EMPLOYEE ROLE':
-          inquirer.prompt([
-            {
-              type:'list',
-              message: "Which employee's role do you want to update?",
-              name: 'eList',
-              choices: employeeList
-            },
-            {
-              type: 'list',
-              message: "Which role do you like to assign to the selected employee?",
-              name: 'newRList',
-              choices: roleList
-            }
-          ]).then((uResponse)=>{
-            db.query(``, (err, results) => {
-              console.log("Updated employee's role.");
-            });
+          db.query(`SELECT * FROM employee`,(err, data)=> {
+            if (err) throw err;
+            const e = data.map(({ id, first_name, last_name }) => ({ name: first_name + " "+ last_name, value: id }));
+            inquirer.prompt([
+              {
+                type:'list',
+                message: "Which employee's role do you want to update?",
+                name: 'eList',
+                choices: e
+              }
+            ]).then((response)=>{
+              const uList = [];
+              uList.push(response.eList);
+              
+              db.query(`SELECT * FROM e_role`, (err, results) => {
+                if (err) throw err;
+                const r = results.map(({ id, title }) => ({ name: title, value: id }));
+
+                inquirer.prompt([
+                  {
+                    type: 'list',
+                    message: "Which role do you like to assign to the selected employee?",
+                    name: 'newRList',
+                    choices: r
+                  }
+                ]).then(uResponse =>{
+                  uList.push(uResponse.newRList);
+
+                  let employee = uList[0]
+                  uList[0] = uResponse.newRList;
+                  uList[1] = employee;
+
+                  db.query(`UPDATE employee SET role_id = ? WHERE id = ?`, uList, (err, final)=> {
+                    if (err) throw err;
+                    console.log("Updated employee's role.");
+                    mainAccess();
+                  })
+
+                })
+              });
+            })
           })
           break;
       }
