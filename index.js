@@ -114,25 +114,50 @@ function mainAccess() {
               type:'input',
               message: "What is the employee's last name?",
               name: 'lPrompt'
-            },
-            {
-              type:'list',
-              message: "What is the employee's role?",
-              name: 'rList',
-              choices: roleList
-            },
-            {
-              type: 'list',
-              message: "Who is the employee's manager?",
-              name: 'mList',
-              choices: manageList
             }
           ]).then((eResponse)=>{
-            db.query('INSERT INTO employee (first_name, last_name, role_id) VALUES (?,?,?);', [eResponse.fPrompt.toString(),eResponse.lPrompt.toString(),eResponse.roleList.toString()], (err, results) => {
+            const roleList = [eResponse.fPrompt, eResponse.lPrompt];
+
+            db.query(`SELECT e_role.id, e_role.title FROM e_role`,(err, results)=>{
               if (err) throw err;
-              console.log('Added'+eResponse.fPrompt.toString()+' '+eResponse.lPrompt.toString()+' to the database.');
-            });
+              const r = results.map(({ id, title }) => ({ name: title, value: id }));
+
+              inquirer.prompt([
+                {
+                  type:'list',
+                  message: "What is the employee's role?",
+                  name: 'rList',
+                  choices: r
+                }
+              ]).then(role_Response => {
+                roleList.push(role_Response.rList);
+
+                db.query(`SELECT * FROM employee`, (err, data) => {
+                  if (err) throw err;
+                  const m = data.map(({ id, first_name, last_name }) => ({ name: first_name + " "+ last_name, value: id }));
+
+                  inquirer.prompt([
+                    {
+                      type: 'list',
+                      message: "Who is the employee's manager?",
+                      name: 'mList',
+                      choices: m
+                    }
+                  ]).then(manageResponse => {
+                    roleList.push(manageResponse.mList);
+
+                    db.query('INSERT INTO employee (first_name, last_name, role_id,manager_id) VALUES (?,?,?,?);', roleList, (err, results) => {
+                      if (err) throw err;
+                      console.log('Added '+eResponse.fPrompt.toString()+' '+eResponse.lPrompt.toString()+' to the database.');
+                      mainAccess();
+                    });
+
+                  })
+              })
+              
+            })
           })
+        })
           break;
         case 'UPDATE AN EMPLOYEE ROLE':
           inquirer.prompt([
